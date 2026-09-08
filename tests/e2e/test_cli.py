@@ -304,3 +304,50 @@ class TestExampleIsReproducible:
         assert [entry["completion"]["text"] for entry in rebuilt["entries"]] == [
             entry["completion"]["text"] for entry in original["entries"]
         ]
+
+    def _build(self, work: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(work / "scripts" / "build-example-cassette.py"), *args],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=180,
+        )
+
+    def _copy_repo(self, tmp_path: Path) -> Path:
+        work = tmp_path / "repo"
+        work.mkdir()
+        shutil.copytree(EXAMPLES, work / "examples")
+        shutil.copytree(EXAMPLES.parent / "scripts", work / "scripts")
+        shutil.copytree(EXAMPLES.parent / "src", work / "src")
+        return work
+
+    def test_check_passes_against_the_committed_cassettes(self, tmp_path: Path):
+        # The control. This is the exact command CI runs, and it has to be green
+        # on an untouched tree — the earlier form of this check regenerated the
+        # files and diffed them, which was red on every run because `recorded_at`
+        # is a timestamp.
+        work = self._copy_repo(tmp_path)
+        before = (work / "examples" / "support-cassette.json").read_bytes()
+
+        result = self._build(work, "--check")
+
+        assert result.returncode == 0, result.stderr
+        # --check writes nothing, so it is safe to run on a clean checkout.
+        assert (work / "examples" / "support-cassette.json").read_bytes() == before
+
+    def test_check_fails_when_the_suite_has_moved_away_from_the_recordings(self, tmp_path: Path):
+        # The negative control. Without this, the CI step is only ever observed
+        # passing, which is also what a `true` would do.
+        work = self._copy_repo(tmp_path)
+        suite = work / "examples" / "support.yaml"
+        suite.write_text(
+            suite.read_text(encoding="utf-8").replace("temperature: 0.0", "temperature: 0.1", 1),
+            encoding="utf-8",
+        )
+
+        result = self._build(work, "--check")
+
+        assert result.returncode == 1
+        assert "no recording for" in result.stderr
+        assert "python tasks.py fixtures" in result.stderr

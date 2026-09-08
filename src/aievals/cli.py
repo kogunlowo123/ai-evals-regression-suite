@@ -342,9 +342,14 @@ def _command_mutate(args: argparse.Namespace, settings: Settings) -> int:
 
     mutation = asyncio.run(MutationHarness(mutators=mutators).analyse(suite, result))
     document = mutation.as_dict()
+    # File or stdout, never both — the same convention `_emit` uses for the
+    # gate report. Writing to both means a job that redirects stdout into a
+    # file gets the document twice, in two places, and has to know which one
+    # the next step reads.
     if args.json_out:
         _write(args.json_out, json.dumps(document, indent=2, ensure_ascii=False))
-    print(json.dumps(document, indent=2, ensure_ascii=False))
+    else:
+        print(json.dumps(document, indent=2, ensure_ascii=False))
 
     print(f"\n{mutation.summary()}", file=sys.stderr)
     for mutant in mutation.survivors:

@@ -14,8 +14,11 @@ this repository has a complete end-to-end example — record, baseline, gate,
 meta-gate — that anyone can run without an account, a card, or egress.
 
 `scripts/build-example-cassette.py` turns them into cassettes, so the example
-exercises the same replay path a real recording would, and CI regenerates them
-and fails if they have drifted from the suite.
+exercises the same replay path a real recording would. CI runs it with
+`--check`, which rebuilds them in memory and fails if the fingerprints or the
+answers have drifted from the suite. It compares those and not the files: a
+cassette carries a `recorded_at` timestamp, so regenerating and diffing would
+be red on every run and tell nobody anything.
 
 To record real ones for your own suite:
 

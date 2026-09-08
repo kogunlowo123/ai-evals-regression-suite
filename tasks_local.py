@@ -100,6 +100,10 @@ TASKS = {
             _example("baseline", "--out", BASELINE, "--note", "the authored example answers"),
         ],
     ),
+    "fixtures-check": (
+        "Do the committed cassettes still serve the suite? The CI check.",
+        [_run("python", "scripts/build-example-cassette.py", "--check")],
+    ),
     "examples": (
         "Run every example. They are documentation that executes.",
         [

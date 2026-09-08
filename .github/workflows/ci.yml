@@ -124,13 +124,14 @@ jobs:
         run: uv run aievals doctor --suite "$SUITE"
 
       - name: The example cassettes still match the suite
-        # Regenerating and diffing catches a suite edit that was never
-        # re-recorded, which would otherwise surface as a cassette miss in
-        # somebody else's pull request.
-        run: |
-          uv run python scripts/build-example-cassette.py
-          git diff --exit-code --stat -- examples/*.json \
-            || { echo "The example cassettes are stale. Run: python tasks.py fixtures"; exit 1; }
+        # Catches a suite edit that was never re-recorded, which would otherwise
+        # surface as a cassette miss in somebody else's pull request.
+        #
+        # Not "regenerate and git diff": cassettes carry a `recorded_at`
+        # timestamp, so that check would be red on every run forever. --check
+        # compares the fingerprints and the answers, which is what a replay
+        # reads, and writes nothing.
+        run: uv run python scripts/build-example-cassette.py --check
 
       - name: gate --mutate
         run: |

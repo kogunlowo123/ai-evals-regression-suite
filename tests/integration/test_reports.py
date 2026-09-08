@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from xml.etree import ElementTree
 
 import pytest
 
-from aievals.gate import evaluate
+from aievals.baseline import Baseline, compare
+from aievals.gate import Finding, evaluate
 from aievals.mutation import MutationHarness
 from aievals.report import json_report, junit, markdown
 from aievals.suite import parse_suite
@@ -228,3 +230,82 @@ class TestMarkdown:
         text = markdown.render(report)
         assert "hermetic:" in text
         assert "suite digest" in text
+
+
+class TestMarkdownWhenTheNewsIsBad:
+    """The sections a reader only ever sees on a red build.
+
+    These are the least-exercised paths in the renderer and the ones that
+    matter most: a job summary that breaks its own table, or silently omits the
+    reason, is worse than no summary, because a reader concludes there was no
+    reason.
+    """
+
+    async def test_the_baseline_comparison_and_its_statistics_are_rendered(self, run_suite):
+        suite = parse_suite(SUITE)
+        before = await run_suite(suite, RecordingProvider({"pg": "ok", "pb": "ok"}))
+        baseline = Baseline.from_run(before, note="the reference point")
+        after = await run_suite(suite, RecordingProvider(ANSWERS))
+
+        text = markdown.render(
+            evaluate(after, suite, comparison=compare(baseline, after)),
+            mutation=None,
+        )
+
+        assert "## Against the baseline" in text
+        # The interval is reported and never gated on; leaving it out of the
+        # summary is how "20/20" starts being read as a proven 100%.
+        assert "Pass rate:" in text
+
+    async def test_a_warning_is_shown_without_being_presented_as_a_reason(self, run_suite):
+        # A flaky case is worth knowing about and is not why the build is red.
+        # Rendering it under "Why the build is red" would send someone hunting
+        # for a regression that is not there.
+        suite = parse_suite(SUITE.replace("min_pass_rate: 1.0", "min_pass_rate: 0.0"))
+        run = await run_suite(suite, RecordingProvider(ANSWERS))
+        warning = Finding(
+            code="FLAKY_CASES",
+            message="1 case(s) disagreed between samples.",
+            severity="warn",
+        )
+        # The findings are a tuple, so the report is rebuilt rather than
+        # mutated. That immutability is the point: nothing downstream of
+        # `evaluate` can add a reason the gate did not decide on.
+        report = replace(evaluate(run, suite), findings=(warning,))
+
+        text = markdown.render(report)
+
+        assert "## Worth knowing" in text
+        assert "FLAKY_CASES" in text
+        assert "Why the build is red" not in text
+
+    async def test_a_long_list_of_failures_is_truncated_rather_than_dumped(self, run_suite):
+        # A summary with two hundred rows is a summary nobody reads, and GitHub
+        # truncates it anyway — at a point the renderer does not choose.
+        cases = "\n".join(
+            f"  - {{id: c{index}, prompt: p{index}, "
+            "graders: [{type: contains_all, params: {values: [ok]}}]}"
+            for index in range(markdown.LIST_LIMIT + 5)
+        )
+        suite = parse_suite(
+            "name: many\nprovider: {name: scripted}\n"
+            "thresholds: {min_pass_rate: 1.0}\ncases:\n" + cases
+        )
+        run = await run_suite(suite, RecordingProvider({}))
+
+        text = markdown.render(evaluate(run, suite))
+
+        assert f"| `c{markdown.LIST_LIMIT - 1}` |" in text
+        assert f"| `c{markdown.LIST_LIMIT}` |" not in text
+        assert "5 more" in text
+
+    async def test_a_case_outside_the_meta_gate_is_counted_in_the_summary(self, run_suite):
+        # A case the meta-gate skipped is not a case it approved, and a reader
+        # has to be told rather than left to infer it from a total.
+        suite = parse_suite(SUITE)
+        run = await run_suite(suite, RecordingProvider(ANSWERS))
+        mutation = await MutationHarness().analyse(suite, run)
+
+        text = markdown.render(evaluate(run, suite), mutation=mutation)
+
+        assert "outside the meta-gate" in text
