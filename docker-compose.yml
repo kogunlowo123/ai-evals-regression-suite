@@ -1,0 +1,79 @@
+# Running the gate against your own suite, without installing anything.
+#
+# This is a command-line tool, so there is no long-running service here. Each
+# entry below is a one-shot container that reads a suite from ./evals and
+# writes reports to ./reports, and exits with the code the gate decided.
+#
+#   docker compose run --rm gate
+#   docker compose run --rm mutate
+#   docker compose run --rm doctor
+#
+# `docker compose up` would start them all and immediately report them as
+# exited, which is why every service sets `profiles` — nothing starts unless it
+# is named.
+
+services:
+  gate:
+    profiles: [tools]
+    build:
+      context: .
+      args:
+        PYTHON_VERSION: "3.12"
+    image: ai-evals-regression-suite:local
+    # The gate is hermetic by default and the provider that could open a socket
+    # cannot be constructed in a hermetic run, so nothing here needs egress.
+    # `network_mode: none` makes that visible in the compose file too, and turns
+    # a future mistake into a connection error rather than a surprise invoice.
+    network_mode: none
+    volumes:
+      - ./evals:/app/evals:ro
+      - ./reports:/app/reports
+    environment:
+      AIEVALS_LOG__FORMAT: json
+      AIEVALS_LOG__LEVEL: INFO
+      AIEVALS_RUN__CONCURRENCY: "4"
+    command:
+      - gate
+      - --suite=evals/suites/support.yaml
+      - --cassette=evals/cassettes/support.json
+      - --baseline=evals/baselines/support.json
+      - --mutate
+      - --json-out=reports/evals.json
+      - --junit-out=reports/evals.xml
+      - --markdown-out=reports/evals.md
+
+  mutate:
+    profiles: [tools]
+    image: ai-evals-regression-suite:local
+    network_mode: none
+    volumes:
+      - ./evals:/app/evals:ro
+    command:
+      - mutate
+      - --suite=evals/suites/support.yaml
+      - --cassette=evals/cassettes/support.json
+      - --set=extended
+      - --min-caught=0
+
+  doctor:
+    profiles: [tools]
+    image: ai-evals-regression-suite:local
+    network_mode: none
+    command: [doctor]
+
+  # Recording is the one operation that needs egress, and it is deliberately a
+  # separate service so that turning the network on is a visible act rather than
+  # a default nobody noticed. The credential comes from the environment; a suite
+  # file cannot carry one.
+  record:
+    profiles: [record]
+    image: ai-evals-regression-suite:local
+    volumes:
+      - ./evals:/app/evals
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY before recording}
+    command:
+      - record
+      - --suite=evals/suites/support.yaml
+      - --out=evals/cassettes/support.json
+      - --allow-network

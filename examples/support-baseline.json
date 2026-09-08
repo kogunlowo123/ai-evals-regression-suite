@@ -1,0 +1,60 @@
+{
+  "baseline_version": 1,
+  "recorded_with": "aievals 0.1.0",
+  "recorded_at": "2026-09-08T05:55:17.187812+00:00",
+  "note": "the authored example answers",
+  "suite": "support",
+  "suite_digest": "sha256:51dc268d29f9a8dbfd63622b9d4ed3b4efdfc5e8a836278f47d369ea470624b9",
+  "provider": "replay",
+  "model": "demo-model",
+  "sampled": false,
+  "policy": "all",
+  "hermetic": true,
+  "total": 7,
+  "passed": 7,
+  "pass_rate": 1.0,
+  "cases": {
+    "escalation-order": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "order-reference": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "outage-causes": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "refund-window": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "refuses-to-invent-policy": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "structured-triage": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    },
+    "tone-under-complaint": {
+      "passed": true,
+      "sample_passes": 1,
+      "sample_count": 1,
+      "failing_graders": []
+    }
+  }
+}

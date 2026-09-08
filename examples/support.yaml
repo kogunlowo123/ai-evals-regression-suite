@@ -1,0 +1,184 @@
+# The example suite. Seven cases for a support assistant, chosen to exercise
+# every deterministic grader and the judge.
+#
+# The provider is `replay`, which is what a suite looks like in CI: the model it
+# was recorded against is named for the record, and the completions come from a
+# cassette. Build the cassette with:
+#
+#     python scripts/build-example-cassette.py
+#
+# The answers behind it are authored — they live in examples/support-answers.yaml
+# and stand in for a model, so that this repository has a working end-to-end
+# example without anyone needing a vendor account. examples/README.md says so
+# in more detail; nothing here pretends to be a captured production trace.
+
+name: support
+description: What an Acme support assistant has to get right.
+schema_version: 1
+
+provider:
+  name: replay
+  model: demo-model
+  temperature: 0.0
+  max_tokens: 512
+
+thresholds:
+  min_pass_rate: 1.0
+  max_p95_latency_ms: 5000
+  alpha: 0.05
+
+# Applied to every case. The house rules that would otherwise be copied into
+# each one and then drift apart.
+default_graders:
+  - type: contains_none
+    describe: no model boilerplate
+    params:
+      case_sensitive: false
+      values:
+        - "As an AI language model"
+        - "I cannot help with that"
+        - "my training data"
+
+cases:
+  - id: refund-window
+    prompt: How long do I have to request a refund?
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      Policy section 4.2. The wrong number here becomes a chargeback, so the
+      figure is graded, not just the topic.
+    tags: [policy, money]
+    graders:
+      - type: numeric_close
+        describe: the refund window in days
+        params:
+          expected: 30
+          where: first
+      - type: contains_all
+        params:
+          case_sensitive: false
+          values: ["refund", "days"]
+      # Added because the meta-gate found the hole: without something from the
+      # end of the answer, `aievals mutate` could cut the response to 30% and
+      # the case still passed. A policy answer that stops at the window and
+      # never mentions the alternative is an incomplete answer.
+      - type: contains_all
+        describe: the alternative offered once the window has passed
+        params:
+          case_sensitive: false
+          values: ["store credit"]
+
+  - id: escalation-order
+    prompt: A customer's payment failed twice. What should the agent do, in order?
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      The sequence is the requirement. Escalating before diagnosing is the
+      failure this case exists to catch, and an unordered check would pass it.
+    tags: [process]
+    graders:
+      - type: ordering
+        describe: acknowledge, then diagnose, then escalate
+        params:
+          case_sensitive: false
+          values: ["acknowledge", "diagnose", "escalate"]
+
+  - id: structured-triage
+    prompt: >
+      Classify this ticket and reply with JSON only, with keys category,
+      severity and escalate: "My card was charged twice for order AC-48213."
+    system: You are a triage service. Reply with a single JSON object.
+    rationale: >
+      Downstream automation parses this. A prose answer breaks the pipeline
+      even when every word in it is correct.
+    tags: [structured]
+    graders:
+      - type: json_schema
+        describe: the triage envelope
+        params:
+          schema:
+            type: object
+            required: [category, severity, escalate]
+            additionalProperties: false
+            properties:
+              category:
+                type: string
+                enum: [billing, shipping, account, technical]
+              severity:
+                type: integer
+                minimum: 1
+                maximum: 5
+              escalate:
+                type: boolean
+
+  - id: order-reference
+    prompt: Confirm you have found order AC-48213 and say what state it is in.
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      The order reference has to survive into the reply verbatim. An assistant
+      that paraphrases it produces a message the customer cannot act on.
+    tags: [identifiers]
+    graders:
+      - type: contains_all
+        params:
+          case_sensitive: false
+          values: ["order"]
+      - type: regex
+        describe: the order reference, in full
+        params:
+          pattern: "\\bAC-\\d{5}\\b"
+
+  - id: outage-causes
+    prompt: What are the usual causes of a failed card payment?
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      There is no single correct phrasing, so this is graded on recall against
+      a reference set rather than on exact wording.
+    tags: [knowledge]
+    graders:
+      - type: set_overlap
+        describe: the documented causes
+        params:
+          min_recall: 1.0
+          expected:
+            - insufficient funds
+            - expired card
+            - incorrect billing address
+            - bank declined
+
+  - id: refuses-to-invent-policy
+    prompt: Can I get a refund after two years if I never used the product?
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      The honest answer is that the policy does not cover it and the agent
+      should hand off. Inventing an exception is the failure mode.
+    tags: [policy, safety]
+    graders:
+      - type: contains_all
+        params:
+          case_sensitive: false
+          values: ["30 days", "supervisor"]
+      - type: contains_none
+        describe: no invented exception
+        params:
+          case_sensitive: false
+          values: ["I can make an exception", "I'll approve"]
+
+  - id: tone-under-complaint
+    prompt: This is the third time I've been charged twice. This is unacceptable.
+    system: You are a support agent for Acme. Be specific and brief.
+    rationale: >
+      Tone has no deterministic check, so this case is model-graded — and the
+      judge is replayed from a cassette, so it runs in CI like everything else.
+    tags: [tone]
+    graders:
+      - type: contains_all
+        describe: a concrete next step, not just sympathy
+        params:
+          case_sensitive: false
+          values: ["refund"]
+      - type: judge
+        describe: acknowledges the repetition without being defensive
+        params:
+          criterion: >
+            The response acknowledges that this has happened more than once,
+            apologises without blaming the customer or the bank, and states a
+            concrete next step.

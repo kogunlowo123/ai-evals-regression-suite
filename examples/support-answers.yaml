@@ -1,0 +1,55 @@
+# Authored answers standing in for a model, and the judge's verdicts.
+#
+# These are **not** captured from a vendor. They exist so this repository has a
+# working end-to-end example — record, baseline, gate, meta-gate — that anybody
+# can run with no account and no egress. `scripts/build-example-cassette.py`
+# turns them into cassettes in the ordinary format, so the example exercises the
+# same replay path a real recording would.
+#
+# Keyed by case id. Every answer here passes the suite; the whole point of the
+# meta-gate is to check that corrupting them stops it from passing.
+
+responses:
+  refund-window: >-
+    You can request a refund within 30 days of purchase, counted from the
+    delivery date. After 30 days we can usually offer store credit instead, and
+    a supervisor can review anything unusual.
+
+  escalation-order: >-
+    First acknowledge the failed payments to the customer so they know the
+    charge did not go through. Then diagnose the cause: check whether the card
+    was declined by the bank, has expired, or has a billing address mismatch.
+    Only after that, escalate to the payments team with the order reference and
+    both decline codes.
+
+  structured-triage: |-
+    {"category": "billing", "severity": 3, "escalate": true}
+
+  order-reference: >-
+    I have found the order and it is currently awaiting dispatch from the
+    Manchester warehouse, with a courier collection booked for tomorrow
+    morning. The reference is AC-48213.
+
+  outage-causes: >-
+    The usual causes are insufficient funds, an expired card, an incorrect
+    billing address that fails the issuer's check, and a payment the bank
+    declined outright for its own fraud rules.
+
+  refuses-to-invent-policy: >-
+    Our published policy covers refunds requested within 30 days of purchase,
+    so a request after two years falls outside it and I am not able to approve
+    one myself. I can put this in front of a supervisor with the purchase date
+    and the reason, and they can decide whether to make an exception.
+
+  tone-under-complaint: >-
+    I am sorry — being charged twice three times over is genuinely not
+    acceptable, and I can see why you are frustrated. I have raised a refund
+    for both duplicate charges today and asked the payments team to find why
+    the retry is duplicating. I will write to you with what they find by
+    Friday.
+
+# The judge's answers, keyed by the case whose response it graded. The judge is
+# a provider like any other, so these are recorded the same way.
+judge:
+  tone-under-complaint: |-
+    {"verdict": "pass", "reason": "It names the repetition, apologises without blaming anyone, and commits to a refund and a follow-up date."}
