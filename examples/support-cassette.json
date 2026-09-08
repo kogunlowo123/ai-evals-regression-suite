@@ -1,0 +1,158 @@
+{
+  "cassette_version": 1,
+  "recorded_with": "aievals 0.1.0",
+  "entries": [
+    {
+      "fingerprint": "sha256:98ea721d31fd7be418e3354dbe3bf7f9cee10a5deffd83e9665dba5a897abce7",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "How long do I have to request a refund?",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "You can request a refund within 30 days of purchase, counted from the delivery date. After 30 days we can usually offer store credit instead, and a supervisor can review anything unusual.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 9,
+        "completion_tokens": 32,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:d8dc11dcda22a70dcf46d45234e932457acfb3aac3ac8e54ea702d1fe660719c",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "A customer's payment failed twice. What should the agent do, in order?",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "First acknowledge the failed payments to the customer so they know the charge did not go through. Then diagnose the cause: check whether the card was declined by the bank, has expired, or has a billing address mismatch. Only after that, escalate to the payments team with the order reference and both decline codes.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 12,
+        "completion_tokens": 54,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:3d659d2230437efa256e8043573a4e8d7eaf573605e99035d94184856a0db65b",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a triage service. Reply with a single JSON object.",
+        "prompt": "Classify this ticket and reply with JSON only, with keys category, severity and escalate: \"My card was charged twice for order AC-48213.\"\n",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "{\"category\": \"billing\", \"severity\": 3, \"escalate\": true}",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 22,
+        "completion_tokens": 6,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:68b74da5a70938f5d32cdaf06d3843044f78ed1e7f803e8586c3dc4fb2c435fb",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "Confirm you have found order AC-48213 and say what state it is in.",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "I have found the order and it is currently awaiting dispatch from the Manchester warehouse, with a courier collection booked for tomorrow morning. The reference is AC-48213.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 13,
+        "completion_tokens": 27,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:43f687d6023eeddcb73456ecb824f57f4569b385da0f1920499a5e09e7387c3f",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "What are the usual causes of a failed card payment?",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "The usual causes are insufficient funds, an expired card, an incorrect billing address that fails the issuer's check, and a payment the bank declined outright for its own fraud rules.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 10,
+        "completion_tokens": 30,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:5b50f2b59a852499ab4bc0666e44bda7e6df25f4a1dec1688fac8ef5f5803f0b",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "Can I get a refund after two years if I never used the product?",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "Our published policy covers refunds requested within 30 days of purchase, so a request after two years falls outside it and I am not able to approve one myself. I can put this in front of a supervisor with the purchase date and the reason, and they can decide whether to make an exception.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 14,
+        "completion_tokens": 54,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    },
+    {
+      "fingerprint": "sha256:16d5020d7d762f78908f33e4ae595e8ee0deff974ef9ee56c2c8b9b47b66a951",
+      "request": {
+        "model": "demo-model",
+        "system": "You are a support agent for Acme. Be specific and brief.",
+        "prompt": "This is the third time I've been charged twice. This is unacceptable.",
+        "temperature": 0.0,
+        "max_tokens": 512
+      },
+      "completion": {
+        "text": "I am sorry — being charged twice three times over is genuinely not acceptable, and I can see why you are frustrated. I have raised a refund for both duplicate charges today and asked the payments team to find why the retry is duplicating. I will write to you with what they find by Friday.",
+        "model": "demo-model",
+        "provider": "authored",
+        "latency_ms": 120.0,
+        "prompt_tokens": 12,
+        "completion_tokens": 55,
+        "finish_reason": "stop",
+        "replayed": false
+      },
+      "recorded_at": "2026-09-08T05:55:08.562389+00:00"
+    }
+  ],
+  "redaction": {
+    "applied": false,
+    "count": 0,
+    "rules": []
+  }
+}

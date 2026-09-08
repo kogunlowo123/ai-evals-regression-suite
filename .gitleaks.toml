@@ -1,0 +1,45 @@
+# gitleaks configuration.
+#
+# The default rule set is used in full; this file records allowlist entries,
+# each with a justification. An allowlist entry without a reason is a suppressed
+# finding, which is indistinguishable from an unnoticed one.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Repository-wide allowlist"
+
+paths = [
+  # Regression fixtures deliberately contain credential-shaped strings so the
+  # redaction control has something real to act on. Every one is built by
+  # concatenation in tests/conftest.py — "AKIA" + "IOSFODNN7EXAMPLE" — so
+  # nothing here was ever a valid credential, and a reader can see that at a
+  # glance.
+  '''tests/conftest\.py''',
+  '''tests/security/.*\.py''',
+  '''tests/unit/test_redaction\.py''',
+  '''tests/integration/test_providers\.py''',
+  # The smoke test and the compose stack use obvious development-only values.
+  '''scripts/smoke-test\.sh''',
+]
+
+regexes = [
+  # Documented placeholders in .env.example and the configuration reference.
+  '''REPLACE_ME[A-Z_]*''',
+  # Test keys, named so their nature is unmistakable.
+  '''[a-z-]*-key-not-a-real-secret''',
+  # AWS's own documented example key, used as a redaction fixture. It has never
+  # been valid and appears in AWS's public documentation.
+  '''AKIAIOSFODNN7EXAMPLE''',
+  # A run of a single repeated character is a fixture, not a credential: the
+  # redaction tests need tokens of the right shape and length.
+  '''gh[pousr]_a{20,}''',
+  '''github_pat_b{20,}''',
+  '''sk-b{20,}''',
+  '''sk-ant-c{20,}''',
+  '''AIza[d]{20,}''',
+  # The placeholder emitted by the redactor itself, which appears in expected
+  # values throughout the tests.
+  '''\[REDACTED:[a-z_]+\]''',
+]
