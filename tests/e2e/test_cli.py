@@ -8,6 +8,7 @@ together. A library test cannot show that ``echo $?`` is 2.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -22,12 +23,15 @@ from tests.conftest import EXAMPLES
 pytestmark = pytest.mark.e2e
 
 
-def aievals(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+def aievals(
+    *args: str, cwd: Path | None = None, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "aievals", *args],
         capture_output=True,
         text=True,
         cwd=cwd,
+        env=None if env is None else {**os.environ, **env},
         check=False,
         timeout=180,
     )
@@ -43,6 +47,37 @@ EXAMPLE = (
     "--judge-model",
     "demo-judge",
 )
+
+
+class TestBadConfiguration:
+    """A bad environment variable, seen from where a CI job sees it.
+
+    The unit tests call `load()` directly, so they pass whether or not the
+    command line ever renders what it raises. This is the layer that can tell:
+    a guard whose test does not exercise the boundary that consumes it is a
+    guard nobody has checked. Both of these escaped as a traceback and exit 1
+    until `main` was changed to read the settings inside its own try block.
+    """
+
+    @pytest.mark.parametrize(
+        "variable",
+        [
+            # A misspelt section: pydantic never builds the key, so
+            # extra="forbid" has nothing to reject.
+            "AIEVALS_LOGS__LEVEL",
+            # A misspelt field: pydantic raises, but ValidationError is not one
+            # of this tool's exceptions.
+            "AIEVALS_RUN__CONCURENCY",
+        ],
+    )
+    def test_a_misspelt_variable_is_reported_rather_than_dumped(self, variable: str):
+        result = aievals("doctor", env={variable: "DEBUG"})
+
+        assert result.returncode == EXIT_ERROR
+        assert "Traceback" not in result.stderr
+        assert variable.removeprefix("AIEVALS_").split("__")[0].lower() in result.stderr.lower()
+        # And the remedy says what the variables actually look like.
+        assert "AIEVALS_<SECTION>__<FIELD>" in result.stderr
 
 
 class TestBasics:

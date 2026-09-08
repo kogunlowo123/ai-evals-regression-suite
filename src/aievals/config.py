@@ -18,7 +18,7 @@ import os
 from collections.abc import Iterable, Mapping
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from aievals.errors import ConfigError
@@ -107,6 +107,22 @@ def load(environ: Mapping[str, str] | None = None) -> Settings:
 
     *environ* exists so a test can supply one; production passes nothing and
     gets ``os.environ``.
+
+    A misspelt field raises pydantic's ``ValidationError``, which is not one of
+    this tool's exceptions and so escaped the command line as a traceback and
+    exit 1. It is translated here, so a bad variable is reported the way every
+    other failure is: a message, a remedy, and exit 3.
     """
     _reject_unknown_sections(os.environ if environ is None else environ)
-    return Settings()
+    try:
+        return Settings()
+    except ValidationError as exc:
+        fields = ", ".join(".".join(str(part) for part in error["loc"]) for error in exc.errors())
+        raise ConfigError(
+            f"the settings are invalid: {fields or 'see below'}.",
+            remedy=(
+                "Variables are AIEVALS_<SECTION>__<FIELD>, for example "
+                "AIEVALS_RUN__CONCURRENCY=8. Unknown names are refused rather "
+                f"than ignored.\n  {exc}"
+            ),
+        ) from exc

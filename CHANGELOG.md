@@ -7,6 +7,16 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **A bad `AIEVALS_` environment variable crashed with a traceback and exit 1**
+  instead of being reported with a remedy and exit 3. The settings were read
+  *above* `main`'s try block, so neither a misspelt section nor pydantic's
+  `ValidationError` for a misspelt field ever reached the handler that renders
+  this tool's errors. The unit tests could not see it: they call `load()`
+  directly, and a guard whose test does not exercise the boundary that consumes
+  it is a guard nobody has checked. Asserted now at the process boundary.
+
 ## [0.1.0] — 2026-09-08
 
 First release. An LLM evaluation harness whose evaluations are tests: they have

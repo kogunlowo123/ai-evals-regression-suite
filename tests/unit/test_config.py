@@ -69,7 +69,10 @@ class TestEnvironment:
         # The whole reason for extra="forbid". Without it this typo leaves a CI
         # job running at the default concurrency and reporting nothing.
         monkeypatch.setenv("AIEVALS_RUN__CONCURENCY", "8")
-        with pytest.raises(ValidationError):
+        # Reported as a ConfigError rather than pydantic's ValidationError,
+        # because the command line renders this tool's errors and lets anything
+        # else escape as a traceback and exit 1 — see the e2e assertion.
+        with pytest.raises(ConfigError, match="concurency"):
             load()
 
     def test_an_unknown_section_is_an_error_too(self, monkeypatch: pytest.MonkeyPatch):

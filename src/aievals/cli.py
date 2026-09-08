@@ -105,10 +105,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    settings = load()
-    configure(level=args.log_level or settings.log.level, json_output=settings.log.format == "json")
-
+    # Inside the try, not above it. Reading the settings is the first thing that
+    # can fail on a badly configured CI runner, and it was the one failure that
+    # escaped as a traceback and exit 1 — in exactly the deployment where the
+    # settings module's own docstring says a typo has to be visible.
     try:
+        settings = load()
+        configure(
+            level=args.log_level or settings.log.level,
+            json_output=settings.log.format == "json",
+        )
         return int(args.handler(args, settings))
     except AievalsError as exc:
         print(exc.render(), file=sys.stderr)
