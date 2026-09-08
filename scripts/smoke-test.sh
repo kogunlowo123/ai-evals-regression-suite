@@ -24,6 +24,13 @@ SCRATCH_LOCAL="${PWD}/var/smoke"
 SCRATCH_HOST="${WORKDIR_HOST}/var/smoke"
 rm -rf "${SCRATCH_LOCAL}"
 mkdir -p "${SCRATCH_LOCAL}"
+# And make it group- and world-writable, because the image deliberately does not
+# run as root. On Linux a bind mount carries the host's ownership through, so a
+# directory owned by the CI runner's user is one the container's user cannot
+# write to, and every report assertion fails with a permission error. Docker
+# Desktop on Windows ignores ownership entirely, so this failure appears only in
+# CI — which is exactly where it is most expensive to diagnose.
+chmod 0777 "${SCRATCH_LOCAL}" 2>/dev/null || true
 
 cleanup() {
   rm -rf "${SCRATCH_LOCAL}"
@@ -118,10 +125,11 @@ check_fails "a live provider is refused in a hermetic run" 3 \
 
 echo
 echo "--- reports are written where they are asked for"
+mount_error="$(mktemp)"
 if docker run --rm -v "${SCRATCH_HOST}:/app/reports" "${IMAGE}" \
     run "${EXAMPLE[@]}" \
     --json-out reports/evals.json --junit-out reports/evals.xml \
-    --markdown-out reports/evals.md >/dev/null 2>&1; then
+    --markdown-out reports/evals.md >/dev/null 2>"${mount_error}"; then
   check "the bind mount is visible and writable from inside the container" \
     test -s "${SCRATCH_LOCAL}/evals.json"
   check "the JUnit report is well-formed XML" \
@@ -131,8 +139,12 @@ if docker run --rm -v "${SCRATCH_HOST}:/app/reports" "${IMAGE}" \
     grep -q "^# Evaluation gate" "${SCRATCH_LOCAL}/evals.md"
 else
   echo "  FAIL  the image could not write reports to a mounted directory"
+  # Print what the container said. Without this the assertion names a symptom
+  # and the cause — almost always a permission on the mount — is invisible.
+  sed 's/^/        /' "${mount_error}" | tail -5
   failures=$((failures + 1))
 fi
+rm -f "${mount_error}"
 
 echo
 if [ "${failures}" -eq 0 ]; then
