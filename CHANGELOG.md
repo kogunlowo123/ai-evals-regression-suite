@@ -89,7 +89,7 @@ would notice a regression at all.
 
 **Project**
 
-- 560 tests across five layers at 94% coverage against a 90% gate.
+- 618 tests across five layers at 96% coverage against a 90% gate.
 - A `meta` layer that breaks one requirement at a time and asserts the build
   goes red — including deleting a case's graders and asserting the meta-gate
   catches it. Without it, "CI fails on real regressions" is an unsupported claim.
@@ -145,6 +145,22 @@ Recorded because the tests that caught them are the reason to trust the rest:
 - **An `assert` was guarding a runtime invariant** in the scripted provider.
   `assert` is removed under `-O`, so the guard would be absent in exactly the
   deployment where a stray `None` is hardest to diagnose.
+- **The command line was the least-tested module in the project.** It was
+  exercised only through a subprocess, and a subprocess is a different
+  interpreter: none of it was visible to a coverage run, and no test could say
+  which branch had been taken. It is now driven in process as well, which found
+  that `mutate --json-out` wrote the report to the file *and* to stdout while
+  `gate --json-out` wrote it to one or the other.
+- **A misspelt settings section was silently ignored.** `extra="forbid"` rejects
+  `AIEVALS_RUN__CONCURENCY`, but `AIEVALS_LOGS__LEVEL` never reaches validation
+  at all — there is no `logs` key for pydantic to refuse — so a CI runner would
+  keep the default and report nothing. `load()` now checks the section names
+  itself.
+- **A CI step could never have passed.** The check that the example cassettes
+  still match the suite regenerated them and ran `git diff`. Cassettes carry a
+  `recorded_at` timestamp, so the diff is never empty: the job would have been
+  red on every run, for every contributor, telling them to run a command that
+  could not help. It now compares fingerprints and answers, and writes nothing.
 
 [Unreleased]: https://github.com/kogunlowo123/ai-evals-regression-suite/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/kogunlowo123/ai-evals-regression-suite/releases/tag/v0.1.0

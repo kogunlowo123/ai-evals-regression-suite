@@ -76,3 +76,7 @@ class CassetteError(ProviderError):
 
 class BaselineError(AievalsError):
     """A baseline is missing, malformed, or describes a different suite."""
+
+
+class ConfigError(AievalsError):
+    """An environment variable names a setting this tool does not have."""

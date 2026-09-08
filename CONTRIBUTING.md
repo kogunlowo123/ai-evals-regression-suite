@@ -45,6 +45,7 @@ scan over both the working tree and the full git history.
 | The meta-gate | `python tasks.py mutate` |
 | What is this suite blind to? | `python tasks.py mutate-extended` |
 | Rebuild the example fixtures | `python tasks.py fixtures` |
+| Are the fixtures still current? | `python tasks.py fixtures-check` |
 | Run every example | `python tasks.py examples` |
 | Documentation site | `python tasks.py site` |
 | Local security scans | `python tasks.py security` |
