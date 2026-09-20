@@ -220,3 +220,60 @@ skipped: a judge that cannot be understood has not endorsed anything.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+<!-- project-structure -->
+## Project structure
+
+```text
+├── .github/
+├── docs/
+│   ├── ci.md
+│   ├── gating.md
+│   ├── graders.md
+│   ├── mutation.md
+│   ├── providers.md
+│   └── suites.md
+├── examples/
+│   ├── README.md
+│   ├── mutation_demo.py
+│   ├── quickstart.py
+│   ├── statistics_demo.py
+│   ├── support-answers.yaml
+│   ├── support-baseline.json
+│   ├── support-cassette.json
+│   ├── support-judge-cassette.json
+│   └── … 1 more
+├── scripts/
+│   ├── build-example-cassette.py
+│   ├── build_site.py
+│   └── smoke-test.sh
+├── security/
+│   ├── audit-exceptions.md
+│   └── audit-ignores.txt
+├── src/
+│   └── aievals/
+├── tests/
+│   ├── e2e/
+│   ├── integration/
+│   ├── meta/
+│   ├── security/
+│   ├── unit/
+│   ├── __init__.py
+│   └── conftest.py
+├── .dockerignore
+├── .env.example
+├── .gitattributes
+├── .gitignore
+├── .gitleaks.toml
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── Dockerfile
+… (truncated)
+```
+
+<!-- architecture -->
+## Architecture
+
+![Architecture diagram](docs/architecture.svg)
