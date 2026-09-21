@@ -191,8 +191,7 @@ that matters.
 
 **Mitigation.** Four runtime dependencies, all widely used and version-pinned by
 a committed lockfile. The HTTP client is `urllib` from the standard library.
-`pip-audit` runs against the locked set in CI with no `continue-on-error`;
-Dependabot opens updates weekly.
+`pip-audit` runs against the locked set in CI with no `continue-on-error`.
 
 **Residual.** Four is not zero. `pydantic` in particular is a large dependency,
 justified by doing the validation this tool's security posture rests on.
